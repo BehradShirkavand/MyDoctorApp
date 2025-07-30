@@ -1,4 +1,4 @@
-package com.example.mydoctor.dao;
+package com.example.mydoctor.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,5 +14,7 @@ public interface PatientRepository extends JpaRepository<Patient, Integer> {
     List<Patient> findAllByStatus(Status status);
 
     Optional<Patient> findByIdAndStatus(int id, Status status);
+
+    Optional<Patient> findByUsername(String username);
 
 }

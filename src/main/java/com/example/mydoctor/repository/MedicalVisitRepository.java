@@ -1,4 +1,4 @@
-package com.example.mydoctor.dao;
+package com.example.mydoctor.repository;
 
 
 import java.util.List;

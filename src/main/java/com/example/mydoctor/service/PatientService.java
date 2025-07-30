@@ -2,18 +2,22 @@ package com.example.mydoctor.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.mydoctor.dao.PatientRepository;
 import com.example.mydoctor.dto.MedicalVisitDTO;
 import com.example.mydoctor.dto.MedicalVisitMapper;
 import com.example.mydoctor.dto.PatientDTO;
 import com.example.mydoctor.dto.PatientMapper;
 import com.example.mydoctor.entity.MedicalVisit;
 import com.example.mydoctor.entity.Patient;
+import com.example.mydoctor.enums.Role;
 import com.example.mydoctor.enums.Status;
+import com.example.mydoctor.repository.PatientRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -28,18 +32,23 @@ public class PatientService {
 
     private MedicalVisitMapper medicalVisitMapper;
 
+    private  PasswordEncoder passwordEncoder;
+
+
     @Autowired
     public PatientService (
         PatientRepository thePatientRepository, 
         PatientMapper thePatientMapper, 
         MedicalVisitMapper theMedicalVisitMapper,
-        ObjectMapper theObjectMapper
+        ObjectMapper theObjectMapper,
+        PasswordEncoder thePasswordEncoder
         ) {
         
         this.patientRepository = thePatientRepository;
         this.patientMapper = thePatientMapper;
         this.medicalVisitMapper = theMedicalVisitMapper;
         this.objectMapper = theObjectMapper;
+        this.passwordEncoder = thePasswordEncoder;
     }
 
     
@@ -58,6 +67,12 @@ public class PatientService {
 
     }
 
+    public Optional<Patient> getPatientByUsername(String username) {
+
+        return patientRepository.findByUsername(username);
+
+    }
+
     public PatientDTO createPatient(PatientDTO thePatientDTO) {
 
         Patient thePatient = patientMapper.toEntityForCreate(thePatientDTO);
@@ -70,6 +85,10 @@ public class PatientService {
                 thePatient.addMedicalVisit(visit);
             }
         }
+
+        thePatient.setPassword(passwordEncoder.encode(thePatient.getPassword()));
+
+        thePatient.setRoles(Set.of("ROLE_PATIENT"));
 
         Patient savedPatient = patientRepository.save(thePatient);
 
