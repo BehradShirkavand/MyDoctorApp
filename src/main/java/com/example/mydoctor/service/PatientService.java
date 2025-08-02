@@ -15,7 +15,6 @@ import com.example.mydoctor.dto.PatientDTO;
 import com.example.mydoctor.dto.PatientMapper;
 import com.example.mydoctor.entity.MedicalVisit;
 import com.example.mydoctor.entity.Patient;
-import com.example.mydoctor.enums.Role;
 import com.example.mydoctor.enums.Status;
 import com.example.mydoctor.repository.PatientRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -150,6 +149,12 @@ public class PatientService {
         }
 
         patientRepository.save(thePatient);
+    }
+
+
+    public boolean existsByPhoneNumber(String phoneNumber) {
+        
+        return patientRepository.existsByPhoneNumber(phoneNumber);
     }
 
 }

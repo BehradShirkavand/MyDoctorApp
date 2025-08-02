@@ -10,6 +10,7 @@ import com.example.mydoctor.entity.Patient;
 @Mapper(componentModel = "spring", uses = MedicalVisitMapper.class)
 public interface PatientMapper {
 
+    @Mapping(target = "otp", ignore = true)
     @Mapping(target = "password", ignore = true)
     PatientDTO toDto(Patient patient);
 

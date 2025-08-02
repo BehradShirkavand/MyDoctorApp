@@ -13,12 +13,12 @@ import com.example.mydoctor.service.PatientService;
 
 @RestController
 @RequestMapping("/patients")
-public class PatientRestController {
+public class PatientController {
 
     private PatientService patientService;
 
     @Autowired
-    public PatientRestController(PatientService thePatientService) {
+    public PatientController(PatientService thePatientService) {
 
         this.patientService = thePatientService;
     }

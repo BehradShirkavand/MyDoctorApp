@@ -18,12 +18,12 @@ import com.example.mydoctor.service.MedicalVisitService;
 
 @RestController
 @RequestMapping("/medical_visits")
-public class MedicalVisitRestController {
+public class MedicalVisitController {
 
     private MedicalVisitService medicalVisitService;
 
     @Autowired
-    public MedicalVisitRestController(MedicalVisitService theMedicalVisitService) {
+    public MedicalVisitController(MedicalVisitService theMedicalVisitService) {
 
         this.medicalVisitService = theMedicalVisitService;
     }

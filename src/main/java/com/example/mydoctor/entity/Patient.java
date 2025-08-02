@@ -36,6 +36,9 @@ public class Patient implements UserDetails {
 
     private String password;
 
+    @Column(name = "phone_number", unique = true)
+    private String phoneNumber;
+
     @Column(name="email")
     private String email;
 

@@ -17,4 +17,7 @@ public interface PatientRepository extends JpaRepository<Patient, Integer> {
 
     Optional<Patient> findByUsername(String username);
 
+    boolean existsByPhoneNumber(String phoneNumber);
+
+
 }

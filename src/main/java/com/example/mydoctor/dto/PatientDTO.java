@@ -21,6 +21,11 @@ public class PatientDTO {
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
 
+    private String phoneNumber;
+    
+    @JsonProperty(access = Access.WRITE_ONLY)
+    private String otp;
+
     private String email;
 
     private List<MedicalVisitDTO> medicalVisits;

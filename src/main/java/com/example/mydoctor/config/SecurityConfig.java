@@ -32,7 +32,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/signup", "/login").permitAll()
+                .requestMatchers("/signup", "/login", "/send-otp").permitAll()
                 .requestMatchers("/patients/**").hasRole("PATIENT")
                 .anyRequest().authenticated()
             )
