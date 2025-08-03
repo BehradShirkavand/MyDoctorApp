@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.mydoctor.dto.MedicalVisitDTO;
+import com.example.mydoctor.dto.MedicalVisitMapper;
 import com.example.mydoctor.entity.MedicalVisit;
 import com.example.mydoctor.enums.Status;
 import com.example.mydoctor.repository.MedicalVisitRepository;
@@ -14,22 +16,28 @@ public class MedicalVisitService {
 
     private MedicalVisitRepository medicalVisitRepository;
 
+    private MedicalVisitMapper medicalVisitMapper;
+
+    
+
     @Autowired
-    public MedicalVisitService (MedicalVisitRepository theMedicalVisitRepository) {
+    public MedicalVisitService (MedicalVisitRepository theMedicalVisitRepository, MedicalVisitMapper theMedicalVisitMapper) {
         this.medicalVisitRepository = theMedicalVisitRepository;
+        this.medicalVisitMapper = theMedicalVisitMapper;
+
     }
 
-    public List<MedicalVisit> showActiveMedicalVisits() {
+    public List<MedicalVisitDTO> getAllActiveMedicalVisits() {
         
-        return medicalVisitRepository.findAllByStatus(Status.ACTIVE);
+        return medicalVisitMapper.toDtoList(medicalVisitRepository.findAllByStatus(Status.ACTIVE));
     }
 
-    public MedicalVisit getMedicalVisit(int theId) {
+    public MedicalVisitDTO getMedicalVisitById(int theId) {
 
         MedicalVisit theMedicalVisit = medicalVisitRepository.findById(theId).
         orElseThrow(() -> new RuntimeException("MedicalVisit not found with id: " + theId));
 
-        return theMedicalVisit;
+        return medicalVisitMapper.toDto(theMedicalVisit);
     }
 
     public MedicalVisit addMedicalVisit(MedicalVisit theMedicalVisit) {

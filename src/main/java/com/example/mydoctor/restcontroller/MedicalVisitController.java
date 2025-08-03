@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.mydoctor.dto.MedicalVisitDTO;
 import com.example.mydoctor.entity.MedicalVisit;
 import com.example.mydoctor.service.MedicalVisitService;
 
@@ -28,16 +29,16 @@ public class MedicalVisitController {
         this.medicalVisitService = theMedicalVisitService;
     }
 
-    @GetMapping("/list")
-    public List<MedicalVisit> showMedicalVisits() {
+    @GetMapping
+    public List<MedicalVisitDTO> getAll() {
 
-        return medicalVisitService.showActiveMedicalVisits();
+        return medicalVisitService.getAllActiveMedicalVisits();
     }
 
-    @GetMapping("/get/{id}")
-    public MedicalVisit getMedicalVisit(@PathVariable int id) {
+    @GetMapping("/{id}")
+    public MedicalVisitDTO getById(@PathVariable int id) {
 
-        return medicalVisitService.getMedicalVisit(id);
+        return medicalVisitService.getMedicalVisitById(id);
     }
 
     @PostMapping("/add")

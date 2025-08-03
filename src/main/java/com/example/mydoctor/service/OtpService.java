@@ -1,56 +1,41 @@
 package com.example.mydoctor.service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.Random;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.mydoctor.entity.OtpToken;
-import com.example.mydoctor.repository.OtpTokenRepository;
-
 @Service
 public class OtpService {
-
-    private OtpTokenRepository otpTokenRepository;
+    
+    private final Map<String, OtpToken> otpStorage = new ConcurrentHashMap<>();
 
     private SmsService smsService;
 
     @Autowired
-    public OtpService(OtpTokenRepository theOtpTokenRepository, SmsService theSmsService) {
-        this.otpTokenRepository = theOtpTokenRepository;
+    public OtpService(SmsService theSmsService) {
         this.smsService = theSmsService;
     }
 
     public void generateOtp(String phoneNumber) {
 
-        Optional<OtpToken> existingOtp = otpTokenRepository
-            .findTopByPhoneNumberAndUsedFalseOrderByCreatedAtDesc(phoneNumber);
+        if (otpStorage.containsKey(phoneNumber)) {
+            OtpToken existingOtp = otpStorage.get(phoneNumber);
 
-        if (existingOtp.isPresent()) {
-
-            OtpToken otp = existingOtp.get();
-
-        if (otp.getExpiresAt().isAfter(LocalDateTime.now())) {
-
-            throw new IllegalStateException("Previous code is valid");
-        } else {
-
-            otpTokenRepository.delete(otp);
+            if (!existingOtp.isExpired()) {
+                throw new IllegalStateException("OTP already sent. Please wait until it expires.");
+            } else {
+                otpStorage.remove(phoneNumber);
+            }
         }
-    }
         
-        String otp = String.valueOf(new Random().nextInt(900_000) + 100_000); 
+        String otp = String.valueOf(new SecureRandom().nextInt(900_000) + 100_000); 
 
-        OtpToken token = new OtpToken();
-        token.setPhoneNumber(phoneNumber);
-        token.setOtp(otp);
-        token.setCreatedAt(LocalDateTime.now());
-        token.setExpiresAt(LocalDateTime.now().plusMinutes(5));
-        token.setUsed(false);
-
-        otpTokenRepository.save(token);
+        OtpToken otptoken = new OtpToken(otp, LocalDateTime.now().plusMinutes(5));
+        otpStorage.put(phoneNumber, otptoken);
 
         smsService.sendSms(phoneNumber, otp);
 
@@ -58,19 +43,38 @@ public class OtpService {
 
     public boolean verifyOtp(String phoneNumber, String otp) {
 
-        Optional<OtpToken> tokenOpt = otpTokenRepository.findByPhoneNumberAndOtpAndUsedFalse(phoneNumber, otp);
+        if (!otpStorage.containsKey(phoneNumber)) return false;
 
-        if (tokenOpt.isPresent()) {
+        OtpToken otpToken = otpStorage.get(phoneNumber);
 
-            OtpToken token = tokenOpt.get();
-            
-            if (token.getExpiresAt().isAfter(LocalDateTime.now())) {
-                token.setUsed(true);
-                otpTokenRepository.save(token);
-                return true;
-            }
+        if (otpToken.isExpired() || !otpToken.getOtp().equals(otp)) {
+
+            otpStorage.remove(phoneNumber);
+            return false;
         }
-        return false;
+
+        otpStorage.remove(phoneNumber);
+        
+        return true;
+    }
+
+    private static class OtpToken {
+
+        private final String otp;
+        private final LocalDateTime expiresAt;
+
+        public OtpToken(String otp, LocalDateTime expiresAt) {
+            this.otp = otp;
+            this.expiresAt = expiresAt;
+        }
+
+        public String getOtp() {
+            return otp;
+        }
+
+        public boolean isExpired() {
+            return LocalDateTime.now().isAfter(expiresAt);
+        }
     }
 }
 

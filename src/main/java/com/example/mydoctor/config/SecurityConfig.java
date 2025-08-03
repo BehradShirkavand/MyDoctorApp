@@ -3,8 +3,10 @@ package com.example.mydoctor.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -32,11 +34,13 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/signup", "/login", "/send-otp").permitAll()
+                .requestMatchers("/signup", "/login", "/verify").permitAll()
                 .requestMatchers("/patients/**").hasRole("PATIENT")
                 .anyRequest().authenticated()
             )
-            .httpBasic(Customizer.withDefaults())
+            // .httpBasic(Customizer.withDefaults())
+            .formLogin(AbstractHttpConfigurer::disable) 
+            .httpBasic(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
@@ -62,10 +66,15 @@ public class SecurityConfig {
         return username -> patientRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Patient not found with username: " + username));
     }
+    
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        
         return new BCryptPasswordEncoder();
     }
 }
