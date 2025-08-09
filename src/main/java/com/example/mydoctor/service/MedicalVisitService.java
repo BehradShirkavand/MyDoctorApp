@@ -2,7 +2,10 @@ package com.example.mydoctor.service;
 
 import java.util.List;
 
+import com.example.mydoctor.exception.ApiException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.example.mydoctor.dto.MedicalVisitDTO;
@@ -12,20 +15,11 @@ import com.example.mydoctor.enums.Status;
 import com.example.mydoctor.repository.MedicalVisitRepository;
 
 @Service
+@RequiredArgsConstructor
 public class MedicalVisitService {
 
     private MedicalVisitRepository medicalVisitRepository;
-
     private MedicalVisitMapper medicalVisitMapper;
-
-    
-
-    @Autowired
-    public MedicalVisitService (MedicalVisitRepository theMedicalVisitRepository, MedicalVisitMapper theMedicalVisitMapper) {
-        this.medicalVisitRepository = theMedicalVisitRepository;
-        this.medicalVisitMapper = theMedicalVisitMapper;
-
-    }
 
     public List<MedicalVisitDTO> getAllActiveMedicalVisits() {
         
@@ -35,7 +29,7 @@ public class MedicalVisitService {
     public MedicalVisitDTO getMedicalVisitById(int theId) {
 
         MedicalVisit theMedicalVisit = medicalVisitRepository.findById(theId).
-        orElseThrow(() -> new RuntimeException("MedicalVisit not found with id: " + theId));
+        orElseThrow(() -> new ApiException("MedicalVisit not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         return medicalVisitMapper.toDto(theMedicalVisit);
     }
@@ -47,10 +41,10 @@ public class MedicalVisitService {
 
     public MedicalVisit updateMedicalVisit(MedicalVisit theMedicalVisit) {
 
-        int id = theMedicalVisit.getId();
+        int theId = theMedicalVisit.getId();
 
-        MedicalVisit result = medicalVisitRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("MedicalVisit not found with id: " + id));
+        MedicalVisit result = medicalVisitRepository.findById(theId)
+        .orElseThrow(() -> new ApiException("MedicalVisit not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         result.setDescription(theMedicalVisit.getDescription());
         result.setDiseaseType(theMedicalVisit.getDiseaseType());
@@ -63,7 +57,7 @@ public class MedicalVisitService {
     public void softDeleteMedicalVisit(int theId) {
         
         MedicalVisit medicalVisit = medicalVisitRepository.findById(theId)
-            .orElseThrow(() -> new RuntimeException("Medical visit not found"));
+            .orElseThrow(() -> new ApiException("MedicalVisit not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         medicalVisit.setStatus(Status.DELETED);
 

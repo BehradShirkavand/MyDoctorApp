@@ -5,7 +5,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.example.mydoctor.exception.ApiException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,49 +24,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @Service
+@RequiredArgsConstructor
 public class PatientService {
 
-    private PatientRepository patientRepository;
-
-    private ObjectMapper objectMapper;
-
-    private PatientMapper patientMapper;
-
-    private MedicalVisitMapper medicalVisitMapper;
-
-    private  PasswordEncoder passwordEncoder;
+    private final PatientRepository patientRepository;
+    private final ObjectMapper objectMapper;
+    private final PatientMapper patientMapper;
+    private final MedicalVisitMapper medicalVisitMapper;
+    private final PasswordEncoder passwordEncoder;
 
 
-    @Autowired
-    public PatientService (
-        PatientRepository thePatientRepository, 
-        PatientMapper thePatientMapper, 
-        MedicalVisitMapper theMedicalVisitMapper,
-        ObjectMapper theObjectMapper,
-        PasswordEncoder thePasswordEncoder
-        ) {
-        
-        this.patientRepository = thePatientRepository;
-        this.patientMapper = thePatientMapper;
-        this.medicalVisitMapper = theMedicalVisitMapper;
-        this.objectMapper = theObjectMapper;
-        this.passwordEncoder = thePasswordEncoder;
-    }
-
-    
     public List<PatientDTO> getAllActivePatients() {
 
         return patientMapper.toDtoList(patientRepository.findAllByStatus(Status.ACTIVE));
     }
 
-    
     public PatientDTO getPatientById(int theId) {
 
         Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new RuntimeException("Patient not found with id: " + theId));
+            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         return patientMapper.toDto(thePatient);
-
     }
 
     public Optional<Patient> getPatientByUsername(String username) {
@@ -99,7 +80,7 @@ public class PatientService {
         int theId = thePatientDTO.getId();
 
         Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new RuntimeException("Patient not found with id: " + theId));
+            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         thePatient.setUsername(thePatientDTO.getUsername());
         thePatient.setEmail(thePatientDTO.getEmail());
@@ -122,7 +103,7 @@ public class PatientService {
     public PatientDTO patchPatient(int theId, Map<String, Object> patchPayload) {
         
         Patient tempPatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new RuntimeException("Patient not found with id: " + theId));
+            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         ObjectNode patientNode = objectMapper.convertValue(tempPatient, ObjectNode.class);
 
@@ -140,7 +121,7 @@ public class PatientService {
     public void softDeletePatient(int theId) {
 
         Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new RuntimeException("Patient not found with id: " + theId));
+            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         thePatient.setStatus(Status.DELETED);
 
@@ -150,7 +131,6 @@ public class PatientService {
 
         patientRepository.save(thePatient);
     }
-
 
     public boolean existsByPhoneNumber(String phoneNumber) {
         

@@ -2,6 +2,9 @@ package com.example.mydoctor.service;
 
 import java.util.Optional;
 
+import com.example.mydoctor.exception.ApiException;
+import com.example.mydoctor.payload.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,38 +17,30 @@ import com.example.mydoctor.entity.Patient;
 
 
 @Service
+@RequiredArgsConstructor
 public class RegisterationService {
 
-    private PatientService patientService;
-
-    private OtpService otpService;
-
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    public RegisterationService(PatientService thePatientService, OtpService theOtpService, AuthenticationManager theAuthenticationManager) {
-        this.patientService = thePatientService;
-        this.otpService = theOtpService;
-        this.authenticationManager = theAuthenticationManager;
-    }
+    private final PatientService patientService;
+    private final OtpService otpService;
+    private final AuthenticationManager authenticationManager;
     
-    public ResponseEntity<?> sendOtp(String phoneNumber) {
+    public ResponseEntity<ApiResponse<Object>> sendOtp(String phoneNumber) {
         
         try {
             otpService.generateOtp(phoneNumber);
-            return ResponseEntity.ok("The Otp code was sent");
-            
+            return ResponseEntity.ok(new ApiResponse<>(true, "The Otp code was sent", null));
+
         } catch (IllegalStateException ex) {
             return ResponseEntity
             .status(HttpStatus.TOO_MANY_REQUESTS)
-            .body(ex.getMessage());
+            .body(new ApiResponse<>(false, ex.getMessage(), null));
         }
     }
     
-    public ResponseEntity<?> RegisterAndLogin(PatientDTO thePatientDTO) {
+    public ResponseEntity<ApiResponse<Object>> registerAndLogin(PatientDTO thePatientDTO) {
 
         if (patientService.existsByPhoneNumber(thePatientDTO.getPhoneNumber())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Number is already taken");
+            throw new ApiException("Number is already taken", HttpStatus.BAD_REQUEST);
         }
 
 
@@ -62,7 +57,7 @@ public class RegisterationService {
                 );
 
             } catch (AuthenticationException e) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+                throw new ApiException("Invalid Username or Password", HttpStatus.UNAUTHORIZED);
             } 
         } else {
 
@@ -71,20 +66,19 @@ public class RegisterationService {
 
         sendOtp(thePatientDTO.getPhoneNumber());
 
-        return ResponseEntity.ok("success");
-        
-        
+        return ResponseEntity.ok(new ApiResponse<>(true, "success", null));
+
     }
     
-    public ResponseEntity<?> verify(String phoneNumber, String otp) {
+    public ResponseEntity<ApiResponse<Object>> verify(String phoneNumber, String otp) {
         
         if (!otpService.verifyOtp(phoneNumber, otp)) {
         
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired OTP");
+            throw new ApiException("Invalid or expired OTP", HttpStatus.UNAUTHORIZED);
         
         } else {
 
-            return ResponseEntity.ok("Authenticated succesfully");
+            return ResponseEntity.ok(new ApiResponse<>(true, "Authenticated successfully", null));
         }
     }
 }

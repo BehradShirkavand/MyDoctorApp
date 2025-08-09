@@ -5,20 +5,19 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.example.mydoctor.exception.ApiException;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class OtpService {
     
     private final Map<String, OtpToken> otpStorage = new ConcurrentHashMap<>();
-
-    private SmsService smsService;
-
-    @Autowired
-    public OtpService(SmsService theSmsService) {
-        this.smsService = theSmsService;
-    }
+    private final SmsService smsService;
 
     public void generateOtp(String phoneNumber) {
 
@@ -26,7 +25,7 @@ public class OtpService {
             OtpToken existingOtp = otpStorage.get(phoneNumber);
 
             if (!existingOtp.isExpired()) {
-                throw new IllegalStateException("OTP already sent. Please wait until it expires.");
+                throw new ApiException("OTP already sent. Please wait until it expires.", HttpStatus.BAD_REQUEST);
             } else {
                 otpStorage.remove(phoneNumber);
             }
@@ -58,6 +57,7 @@ public class OtpService {
         return true;
     }
 
+    @Getter
     private static class OtpToken {
 
         private final String otp;
@@ -68,13 +68,8 @@ public class OtpService {
             this.expiresAt = expiresAt;
         }
 
-        public String getOtp() {
-            return otp;
-        }
-
         public boolean isExpired() {
             return LocalDateTime.now().isAfter(expiresAt);
         }
     }
 }
-

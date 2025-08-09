@@ -2,7 +2,7 @@ package com.example.mydoctor.restcontroller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,15 +19,10 @@ import com.example.mydoctor.service.MedicalVisitService;
 
 @RestController
 @RequestMapping("/medical_visits")
+@RequiredArgsConstructor
 public class MedicalVisitController {
 
-    private MedicalVisitService medicalVisitService;
-
-    @Autowired
-    public MedicalVisitController(MedicalVisitService theMedicalVisitService) {
-
-        this.medicalVisitService = theMedicalVisitService;
-    }
+    private final MedicalVisitService medicalVisitService;
 
     @GetMapping
     public List<MedicalVisitDTO> getAll() {

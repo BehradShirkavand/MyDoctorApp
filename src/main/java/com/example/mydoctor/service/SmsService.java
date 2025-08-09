@@ -15,7 +15,7 @@ public class SmsService {
     @Value("${api}")
     private String api; 
 
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     @Autowired
     public SmsService(RestTemplate theRestTemplate) {
