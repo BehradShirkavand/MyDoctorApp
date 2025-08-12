@@ -3,13 +3,12 @@ package com.example.mydoctor.restcontroller;
 import java.util.List;
 import java.util.Map;
 
+import com.example.mydoctor.dto.UserDTO;
 import com.example.mydoctor.payload.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.example.mydoctor.dto.PatientDTO;
 
 import com.example.mydoctor.service.PatientService;
 
@@ -21,36 +20,36 @@ public class PatientController {
     private final PatientService patientService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PatientDTO>>> getAll() {
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getAll() {
 
-        List<PatientDTO> patients = patientService.getAllActivePatients();
-        ApiResponse<List<PatientDTO>> response = new ApiResponse<List<PatientDTO>>(true, "List of patients", patients);
+        List<UserDTO> users = patientService.getAllPatients();
+        ApiResponse<List<UserDTO>> response = new ApiResponse<List<UserDTO>>(true, "List of patients", users);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<PatientDTO>> getById(@PathVariable int id) {
+    public ResponseEntity<ApiResponse<UserDTO>> getById(@PathVariable int id) {
 
-        PatientDTO patient = patientService.getPatientById(id);
-        ApiResponse<PatientDTO> response = new ApiResponse<PatientDTO>(true, "Patient", patient);
+        UserDTO user = patientService.getPatientById(id);
+        ApiResponse<UserDTO> response = new ApiResponse<UserDTO>(true, "Patient", user);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<PatientDTO>> updatePatient(@Valid @RequestBody PatientDTO thePatientDTO) {
+    public ResponseEntity<ApiResponse<UserDTO>> updatePatient(@Valid @RequestBody UserDTO theUserDTO) {
 
-        PatientDTO updated = patientService.updatePatient(thePatientDTO);
-        ApiResponse<PatientDTO> response = new ApiResponse<>(true, "Patient updated successfully", updated);
+        UserDTO updated = patientService.updatePatient(theUserDTO);
+        ApiResponse<UserDTO> response = new ApiResponse<>(true, "Patient updated successfully", updated);
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<PatientDTO>> patchPatient(
+    public ResponseEntity<ApiResponse<UserDTO>> patchPatient(
             @PathVariable int id,
             @RequestBody Map<String, Object> patchPayload
     ) {
-        PatientDTO updatedDto = patientService.patchPatient(id, patchPayload);
-        ApiResponse<PatientDTO> response = new ApiResponse<>(true, "Patient patched successfully", updatedDto);
+        UserDTO updatedDto = patientService.patchPatient(id, patchPayload);
+        ApiResponse<UserDTO> response = new ApiResponse<>(true, "Patient patched successfully", updatedDto);
         return ResponseEntity.ok(response);
     }
 

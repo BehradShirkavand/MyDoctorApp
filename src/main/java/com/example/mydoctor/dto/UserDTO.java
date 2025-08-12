@@ -16,14 +16,14 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PatientDTO {
+public class UserDTO {
 
     private int id;
 
     @NotBlank(message = "Username can not be blank")
     private String username;
 
-//    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Size(min = 4, message = "Password must be at least 4 characters")
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
 

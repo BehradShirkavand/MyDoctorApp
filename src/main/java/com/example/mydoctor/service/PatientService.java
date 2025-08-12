@@ -2,23 +2,21 @@ package com.example.mydoctor.service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
+import com.example.mydoctor.entity.Role;
+import com.example.mydoctor.entity.User;
+import com.example.mydoctor.enums.ERole;
 import com.example.mydoctor.exception.ApiException;
+import com.example.mydoctor.repository.RoleRepository;
+import com.example.mydoctor.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.mydoctor.dto.MedicalVisitDTO;
-import com.example.mydoctor.dto.MedicalVisitMapper;
-import com.example.mydoctor.dto.PatientDTO;
-import com.example.mydoctor.dto.PatientMapper;
+import com.example.mydoctor.dto.*;
 import com.example.mydoctor.entity.MedicalVisit;
-import com.example.mydoctor.entity.Patient;
 import com.example.mydoctor.enums.Status;
-import com.example.mydoctor.repository.PatientRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -26,100 +24,112 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 @RequiredArgsConstructor
 public class PatientService {
 
-    private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final ObjectMapper objectMapper;
-    private final PatientMapper patientMapper;
+    private final UserMapper userMapper;
     private final MedicalVisitMapper medicalVisitMapper;
     private final PasswordEncoder passwordEncoder;
 
 
-    public List<PatientDTO> getAllActivePatients() {
+    public List<UserDTO> getAllPatients() {
 
-        return patientMapper.toDtoList(patientRepository.findAllByStatus(Status.ACTIVE));
+        return userMapper.toDtoList(userRepository.findAllByRoles_NameAndStatus(ERole.ROLE_PATIENT, Status.ACTIVE));
     }
 
-    public PatientDTO getPatientById(int theId) {
+    public UserDTO getPatientById(int theId) {
 
-        Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
+        User theUser = userRepository.findByIdAndRoles_NameAndAndStatus(theId, ERole.ROLE_PATIENT, Status.ACTIVE)
                 .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
-        return patientMapper.toDto(thePatient);
+        return userMapper.toDto(theUser);
     }
 
-    public PatientDTO getPatientByUsername(String username) {
+    public UserDTO getPatientByUsername(String username) {
 
-        Patient thePatient = patientRepository.findByUsername(username)
+        User theUser = userRepository.findByRoles_NameAndUsernameAndStatus(ERole.ROLE_PATIENT, username, Status.ACTIVE)
                 .orElseThrow(() -> new ApiException("Patient not found with username: " + username, HttpStatus.NOT_FOUND));
 
-        return patientMapper.toDto(thePatient);
+        return userMapper.toDto(theUser);
     }
 
-    public PatientDTO getPatientByPhoneNumber(String phoneNumber) {
+    public boolean existsPatientByUsername(String username) {
+        return userRepository.existsByRoles_NameAndUsernameAndStatus(ERole.ROLE_PATIENT, username, Status.ACTIVE);
+    }
 
-        Patient thePatient = patientRepository.findByPhoneNumber(phoneNumber)
+    public UserDTO getPatientByPhoneNumber(String phoneNumber) {
+
+        User theUser = userRepository.findByRoles_NameAndPhoneNumberAndStatus(ERole.ROLE_PATIENT, phoneNumber, Status.ACTIVE)
                 .orElseThrow(() -> new ApiException("Patient not found with phone number: " + phoneNumber, HttpStatus.NOT_FOUND));
 
-        return patientMapper.toDto(thePatient);
+        return userMapper.toDto(theUser);
     }
 
-    public PatientDTO createPatient(PatientDTO thePatientDTO) {
+    public boolean existsPatientByPhoneNumber(String phoneNumber) {
+        return userRepository.existsByRoles_NameAndPhoneNumberAndStatus(ERole.ROLE_PATIENT, phoneNumber, Status.ACTIVE);
+    }
 
-        if (patientRepository.findByPhoneNumber(thePatientDTO.getPhoneNumber()).isPresent()) {
+    public void addPatient(UserDTO theUserDTO) {
+
+        if (userRepository.existsByRoles_NameAndPhoneNumberAndStatus(ERole.ROLE_PATIENT, theUserDTO.getPhoneNumber(), Status.ACTIVE)) {
             throw new ApiException("Number is already taken", HttpStatus.BAD_REQUEST);
         }
 
-        if (patientRepository.findByUsername(thePatientDTO.getUsername()).isPresent()) {
+        if (userRepository.existsByRoles_NameAndUsernameAndStatus(ERole.ROLE_PATIENT, theUserDTO.getUsername(), Status.ACTIVE)) {
             throw new ApiException("Username is already taken", HttpStatus.BAD_REQUEST);
         }
 
-        Patient thePatient = patientMapper.toEntityForCreate(thePatientDTO);
+        User theUser = userMapper.toEntityForCreate(theUserDTO);
 
-        if (thePatientDTO.getMedicalVisits() != null) {
+        if (theUserDTO.getMedicalVisits() != null) {
 
-            for (MedicalVisitDTO visitDTO : thePatientDTO.getMedicalVisits()) {
+            for (MedicalVisitDTO visitDTO : theUserDTO.getMedicalVisits()) {
 
                 MedicalVisit visit = medicalVisitMapper.toEntity(visitDTO);
-                thePatient.addMedicalVisit(visit);
+                theUser.addMedicalVisit(visit);
             }
         }
 
-        thePatient.setPassword(passwordEncoder.encode(thePatient.getPassword()));
+        theUser.setPassword(passwordEncoder.encode(theUser.getPassword()));
 
-        thePatient.setRoles(Set.of("ROLE_PATIENT"));
+        Role role = roleRepository.findByName(ERole.ROLE_PATIENT)
+                .orElseThrow(() -> new ApiException("Role not found", HttpStatus.NOT_FOUND));
 
-        Patient savedPatient = patientRepository.save(thePatient);
+        theUser.getRoles().add(role);
 
-        return patientMapper.toDto(savedPatient);
+        User savedUser = userRepository.save(theUser);
+
+        userMapper.toDto(savedUser);
     }
 
-    public PatientDTO updatePatient(PatientDTO thePatientDTO) {
+    public UserDTO updatePatient(UserDTO theUserDTO) {
 
-        int theId = thePatientDTO.getId();
+        int theId = theUserDTO.getId();
 
-        Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
+        User theUser = userRepository.findByIdAndRoles_NameAndAndStatus(theId, ERole.ROLE_PATIENT, Status.ACTIVE)
                 .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
-        thePatient.setUsername(thePatientDTO.getUsername());
-        thePatient.setEmail(thePatientDTO.getEmail());
+        theUser.setUsername(theUserDTO.getUsername());
+        theUser.setEmail(theUserDTO.getEmail());
 
-        thePatient.getMedicalVisits().clear();
+        theUser.getMedicalVisits().clear();
 
-        if (thePatientDTO.getMedicalVisits() != null) {
+        if (theUserDTO.getMedicalVisits() != null) {
 
-            for (MedicalVisitDTO visitDTO : thePatientDTO.getMedicalVisits()) {
+            for (MedicalVisitDTO visitDTO : theUserDTO.getMedicalVisits()) {
 
                 MedicalVisit visit = medicalVisitMapper.toEntity(visitDTO);
-                thePatient.addMedicalVisit(visit);
+                theUser.addMedicalVisit(visit);
             }
         }
 
-        Patient updated = patientRepository.save(thePatient);
-        return patientMapper.toDto(updated);
+        User updated = userRepository.save(theUser);
+        return userMapper.toDto(updated);
     }
 
-    public PatientDTO patchPatient(int theId, Map<String, Object> patchPayload) {
+    public UserDTO patchPatient(int theId, Map<String, Object> patchPayload) {
 
-        Patient tempPatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
+        User tempPatient = userRepository.findByIdAndRoles_NameAndAndStatus(theId, ERole.ROLE_PATIENT, Status.ACTIVE)
                 .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         ObjectNode patientNode = objectMapper.convertValue(tempPatient, ObjectNode.class);
@@ -128,24 +138,24 @@ public class PatientService {
 
         patientNode.setAll(patchNode);
 
-        Patient mergedPatient = objectMapper.convertValue(patientNode, Patient.class);
+        User mergedUser = objectMapper.convertValue(patientNode, User.class);
 
-        Patient dbPatient = patientRepository.save(mergedPatient);
+        User dbUser = userRepository.save(mergedUser);
 
-        return patientMapper.toDto(dbPatient);
+        return userMapper.toDto(dbUser);
     }
 
     public void softDeletePatient(int theId) {
 
-        Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
+        User theUser = userRepository.findByIdAndRoles_NameAndAndStatus(theId, ERole.ROLE_PATIENT, Status.ACTIVE)
                 .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
-        thePatient.setStatus(Status.DELETED);
+        theUser.setStatus(Status.DELETED);
 
-        if (thePatient.getMedicalVisits() != null) {
-            thePatient.getMedicalVisits().forEach(app -> app.setStatus(Status.DELETED));
+        if (theUser.getMedicalVisits() != null) {
+            theUser.getMedicalVisits().forEach(app -> app.setStatus(Status.DELETED));
         }
 
-        patientRepository.save(thePatient);
+        userRepository.save(theUser);
     }
 }

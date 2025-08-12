@@ -1,15 +1,9 @@
 package com.example.mydoctor.entity;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import com.example.mydoctor.enums.Status;
 
@@ -23,8 +17,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="patient")
-public class Patient {
+@Table(name="user")
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,10 +40,16 @@ public class Patient {
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MedicalVisit> medicalVisits;
 
-    private Set<String> roles = new HashSet<>();
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     public void addMedicalVisit(MedicalVisit tempMedicalVisit) {
 
@@ -58,6 +58,6 @@ public class Patient {
         }
 
         medicalVisits.add(tempMedicalVisit);
-        tempMedicalVisit.setPatient(this);
+        tempMedicalVisit.setUser(this);
     }
 }

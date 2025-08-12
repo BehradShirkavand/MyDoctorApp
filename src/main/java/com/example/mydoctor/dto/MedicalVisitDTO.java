@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MedicalVisitDTO {
 
+    private int id;
 
     @NotBlank(message = "Disease type can not be blank")
     private String diseaseType;

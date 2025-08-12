@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.example.mydoctor.exception.ApiException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +17,8 @@ import com.example.mydoctor.repository.MedicalVisitRepository;
 @RequiredArgsConstructor
 public class MedicalVisitService {
 
-    private MedicalVisitRepository medicalVisitRepository;
-    private MedicalVisitMapper medicalVisitMapper;
+    private final MedicalVisitRepository medicalVisitRepository;
+    private final MedicalVisitMapper medicalVisitMapper;
 
     public List<MedicalVisitDTO> getAllActiveMedicalVisits() {
         
@@ -34,25 +33,24 @@ public class MedicalVisitService {
         return medicalVisitMapper.toDto(theMedicalVisit);
     }
 
-    public MedicalVisit addMedicalVisit(MedicalVisit theMedicalVisit) {
+    public MedicalVisitDTO addMedicalVisit(MedicalVisitDTO theMedicalVisitDTO) {
 
-        return medicalVisitRepository.save(theMedicalVisit);
+        return medicalVisitMapper.toDto(medicalVisitRepository.save(medicalVisitMapper.toEntity(theMedicalVisitDTO)));
     }
 
-    public MedicalVisit updateMedicalVisit(MedicalVisit theMedicalVisit) {
+    public MedicalVisitDTO updateMedicalVisit(MedicalVisitDTO theMedicalVisitDTO) {
 
-        int theId = theMedicalVisit.getId();
+        int theId = theMedicalVisitDTO.getId();
 
         MedicalVisit result = medicalVisitRepository.findById(theId)
         .orElseThrow(() -> new ApiException("MedicalVisit not found with id: " + theId, HttpStatus.NOT_FOUND));
 
-        result.setDescription(theMedicalVisit.getDescription());
-        result.setDiseaseType(theMedicalVisit.getDiseaseType());
+        result.setDescription(theMedicalVisitDTO.getDescription());
+        result.setDiseaseType(theMedicalVisitDTO.getDiseaseType());
 
-    
-        return medicalVisitRepository.save(result);
+        MedicalVisit updatedVisit = medicalVisitRepository.save(result);
+        return medicalVisitMapper.toDto(updatedVisit);
     }
-
 
     public void softDeleteMedicalVisit(int theId) {
         
@@ -63,5 +61,4 @@ public class MedicalVisitService {
 
         medicalVisitRepository.save(medicalVisit);
     }
-
 }

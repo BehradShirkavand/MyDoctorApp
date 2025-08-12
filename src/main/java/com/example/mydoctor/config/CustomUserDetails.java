@@ -1,6 +1,6 @@
 package com.example.mydoctor.config;
 
-import com.example.mydoctor.entity.Patient;
+import com.example.mydoctor.entity.User;
 import com.example.mydoctor.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,24 +13,24 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final Patient patient;
+    private final User user;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return patient.getRoles()
+        return user.getRoles()
                 .stream()
-                .map(SimpleGrantedAuthority::new)
+                .map(role -> new SimpleGrantedAuthority(role.getName().name()))
                 .collect(Collectors.toSet());
     }
 
     @Override
     public String getPassword() {
-        return patient.getPassword();
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return patient.getUsername();
+        return user.getUsername();
     }
 
     @Override
@@ -44,6 +44,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return patient.getStatus() == Status.ACTIVE;
+        return user.getStatus() == Status.ACTIVE;
     }
 }

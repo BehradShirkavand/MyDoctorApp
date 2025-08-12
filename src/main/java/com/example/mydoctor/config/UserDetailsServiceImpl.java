@@ -1,8 +1,10 @@
 package com.example.mydoctor.config;
 
-import com.example.mydoctor.entity.Patient;
+import com.example.mydoctor.entity.User;
+import com.example.mydoctor.enums.ERole;
+import com.example.mydoctor.enums.Status;
 import com.example.mydoctor.exception.ApiException;
-import com.example.mydoctor.repository.PatientRepository;
+import com.example.mydoctor.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,14 +16,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Patient patient = patientRepository.findByUsername(username)
-                .orElseThrow(() -> new ApiException(("User not found"), HttpStatus.NOT_FOUND));
+        User user = userRepository.findByRoles_NameAndUsernameAndStatus(ERole.ROLE_PATIENT, username, Status.ACTIVE)
+                .orElseThrow(() -> new ApiException(("User not found with username: " + username), HttpStatus.NOT_FOUND));
 
-        return new CustomUserDetails(patient);
+        return new CustomUserDetails(user);
     }
 }

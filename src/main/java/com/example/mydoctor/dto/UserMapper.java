@@ -2,29 +2,26 @@ package com.example.mydoctor.dto;
 
 import java.util.List;
 
+import com.example.mydoctor.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import com.example.mydoctor.entity.Patient;
 
 @Mapper(componentModel = "spring", uses = MedicalVisitMapper.class)
-public interface PatientMapper {
+public interface UserMapper {
 
     @Mapping(target = "password", ignore = true)
-    PatientDTO toDto(Patient patient);
+    UserDTO toDto(User user);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", expression = "java(com.example.mydoctor.enums.Status.ACTIVE)")
     @Mapping(target = "medicalVisits", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-
-    Patient toEntityForCreate(PatientDTO dto);
+    User toEntityForCreate(UserDTO dto);
 
     @Mapping(target = "status", expression = "java(com.example.mydoctor.enums.Status.ACTIVE)")
     @Mapping(target = "medicalVisits", ignore = true)
     @Mapping(target = "password", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    Patient toEntity(PatientDTO dto);
+    User toEntity(UserDTO dto);
 
-    List<PatientDTO> toDtoList(List<Patient> patients);
+    List<UserDTO> toDtoList(List<User> patients);
 }

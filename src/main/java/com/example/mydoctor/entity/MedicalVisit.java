@@ -26,8 +26,8 @@ public class MedicalVisit {
     private int id;
 
     @ManyToOne
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name="disease_type")
     private String diseaseType;

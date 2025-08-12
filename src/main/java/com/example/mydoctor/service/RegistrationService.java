@@ -1,9 +1,7 @@
 package com.example.mydoctor.service;
 
-import java.util.Optional;
-
+import com.example.mydoctor.dto.UserDTO;
 import com.example.mydoctor.exception.ApiException;
-import com.example.mydoctor.payload.ApiResponse;
 import com.example.mydoctor.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,8 +9,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
-import com.example.mydoctor.dto.PatientDTO;
-import com.example.mydoctor.entity.Patient;
 
 
 @Service
@@ -25,7 +21,6 @@ public class RegistrationService {
     private final JwtUtil jwtUtil;
 
     public void sendOtp(String phoneNumber) {
-        
         try {
             otpService.generateOtp(phoneNumber);
 
@@ -34,18 +29,18 @@ public class RegistrationService {
         }
     }
     
-    public void registerAndLogin(PatientDTO thePatientDTO) {
+    public void registerAndLogin(UserDTO theUserDTO) {
 
-        PatientDTO existingByPhone = patientService.getPatientByPhoneNumber(thePatientDTO.getPhoneNumber());
-        PatientDTO existingByUsername = patientService.getPatientByUsername(thePatientDTO.getUsername());
+        boolean existingByPhone = patientService.existsPatientByPhoneNumber(theUserDTO.getPhoneNumber());
+        boolean existingByUsername = patientService.existsPatientByUsername(theUserDTO.getUsername());
 
-        if (existingByUsername != null || existingByPhone != null) {
+        if (existingByUsername || existingByPhone) {
 
             try {
                 authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                        thePatientDTO.getUsername(), 
-                        thePatientDTO.getPassword()
+                        theUserDTO.getUsername(),
+                        theUserDTO.getPassword()
                     )
                 );
 
@@ -53,20 +48,20 @@ public class RegistrationService {
                 throw new ApiException("Invalid Username or Password", HttpStatus.UNAUTHORIZED);
             } 
         } else {
-            patientService.createPatient(thePatientDTO);
+            patientService.addPatient(theUserDTO);
         }
 
-        sendOtp(thePatientDTO.getPhoneNumber());
+        sendOtp(theUserDTO.getPhoneNumber());
     }
     
-    public String verify(String phoneNumber, String otp) {
+    public String verifyOtp(String phoneNumber, String otp) {
         
         if (!otpService.verifyOtp(phoneNumber, otp)) {
         
             throw new ApiException("Invalid or expired OTP", HttpStatus.UNAUTHORIZED);
         }
 
-        PatientDTO patient = patientService.getPatientByPhoneNumber(phoneNumber);
-        return jwtUtil.generateToken(patient.getUsername());
+        UserDTO user = patientService.getPatientByPhoneNumber(phoneNumber);
+        return jwtUtil.generateToken(user.getUsername());
     }
 }
