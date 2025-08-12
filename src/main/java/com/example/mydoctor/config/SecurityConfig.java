@@ -1,12 +1,15 @@
 package com.example.mydoctor.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,29 +20,27 @@ import org.springframework.security.web.SecurityFilterChain;
 import com.example.mydoctor.repository.PatientRepository;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private PatientRepository patientRepository;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Autowired
-    public SecurityConfig(PatientRepository thePatientRepository) {
-        this.patientRepository = thePatientRepository;
-    }
-    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/signup", "/login", "/verify").permitAll()
+                .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/patients/**").hasRole("PATIENT")
                 .anyRequest().authenticated()
             )
-            // .httpBasic(Customizer.withDefaults())
-            .formLogin(AbstractHttpConfigurer::disable) 
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -51,25 +52,20 @@ public class SecurityConfig {
                     response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"You must login first\"}");
 
                 })
-            )
-            .userDetailsService(userDetailsService())
+            );
             
-            .logout(logout -> logout.permitAll());
+
 
         return http.build();
 
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-
-        return username -> patientRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Patient not found with username: " + username));
-    }
-    
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authBuilder.userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder());
+        return authBuilder.build();
     }
 
 

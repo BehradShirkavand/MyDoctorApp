@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Table(name="patient")
-public class Patient implements UserDetails {
+public class Patient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,31 +60,4 @@ public class Patient implements UserDetails {
         medicalVisits.add(tempMedicalVisit);
         tempMedicalVisit.setPatient(this);
     }
-
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        
-        return roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
-    }
-    
-    @Override public String getUsername() { return username;}
-    
-    @Override public String getPassword() { return password;}
-
-    @Override public boolean isAccountNonExpired() { return true;}
-
-    @Override public boolean isAccountNonLocked() { return true;}
-
-    @Override public boolean isCredentialsNonExpired() { return true;}
-
-    @Override
-    public boolean isEnabled() {
-        
-        if (status == Status.ACTIVE) {
-            return true;
-        }
-        return false;
-    }
-
 }

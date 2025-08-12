@@ -17,7 +17,6 @@ public interface PatientMapper {
     @Mapping(target = "status", expression = "java(com.example.mydoctor.enums.Status.ACTIVE)")
     @Mapping(target = "medicalVisits", ignore = true)
     @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "authorities", ignore = true)
 
     Patient toEntityForCreate(PatientDTO dto);
 
@@ -25,7 +24,6 @@ public interface PatientMapper {
     @Mapping(target = "medicalVisits", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "authorities", ignore = true)
     Patient toEntity(PatientDTO dto);
 
     List<PatientDTO> toDtoList(List<Patient> patients);

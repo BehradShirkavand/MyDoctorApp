@@ -7,7 +7,6 @@ import java.util.Set;
 
 import com.example.mydoctor.exception.ApiException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,24 +41,42 @@ public class PatientService {
     public PatientDTO getPatientById(int theId) {
 
         Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         return patientMapper.toDto(thePatient);
     }
 
-    public Optional<Patient> getPatientByUsername(String username) {
+    public PatientDTO getPatientByUsername(String username) {
 
-        return patientRepository.findByUsername(username);
+        Patient thePatient = patientRepository.findByUsername(username)
+                .orElseThrow(() -> new ApiException("Patient not found with username: " + username, HttpStatus.NOT_FOUND));
 
+        return patientMapper.toDto(thePatient);
+    }
+
+    public PatientDTO getPatientByPhoneNumber(String phoneNumber) {
+
+        Patient thePatient = patientRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new ApiException("Patient not found with phone number: " + phoneNumber, HttpStatus.NOT_FOUND));
+
+        return patientMapper.toDto(thePatient);
     }
 
     public PatientDTO createPatient(PatientDTO thePatientDTO) {
+
+        if (patientRepository.findByPhoneNumber(thePatientDTO.getPhoneNumber()).isPresent()) {
+            throw new ApiException("Number is already taken", HttpStatus.BAD_REQUEST);
+        }
+
+        if (patientRepository.findByUsername(thePatientDTO.getUsername()).isPresent()) {
+            throw new ApiException("Username is already taken", HttpStatus.BAD_REQUEST);
+        }
 
         Patient thePatient = patientMapper.toEntityForCreate(thePatientDTO);
 
         if (thePatientDTO.getMedicalVisits() != null) {
 
-            for (MedicalVisitDTO visitDTO: thePatientDTO.getMedicalVisits()) {
+            for (MedicalVisitDTO visitDTO : thePatientDTO.getMedicalVisits()) {
 
                 MedicalVisit visit = medicalVisitMapper.toEntity(visitDTO);
                 thePatient.addMedicalVisit(visit);
@@ -80,7 +97,7 @@ public class PatientService {
         int theId = thePatientDTO.getId();
 
         Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         thePatient.setUsername(thePatientDTO.getUsername());
         thePatient.setEmail(thePatientDTO.getEmail());
@@ -89,21 +106,21 @@ public class PatientService {
 
         if (thePatientDTO.getMedicalVisits() != null) {
 
-            for (MedicalVisitDTO visitDTO: thePatientDTO.getMedicalVisits()) {
+            for (MedicalVisitDTO visitDTO : thePatientDTO.getMedicalVisits()) {
 
                 MedicalVisit visit = medicalVisitMapper.toEntity(visitDTO);
                 thePatient.addMedicalVisit(visit);
             }
         }
-    
+
         Patient updated = patientRepository.save(thePatient);
         return patientMapper.toDto(updated);
     }
 
     public PatientDTO patchPatient(int theId, Map<String, Object> patchPayload) {
-        
+
         Patient tempPatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         ObjectNode patientNode = objectMapper.convertValue(tempPatient, ObjectNode.class);
 
@@ -121,7 +138,7 @@ public class PatientService {
     public void softDeletePatient(int theId) {
 
         Patient thePatient = patientRepository.findByIdAndStatus(theId, Status.ACTIVE)
-            .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException("Patient not found with id: " + theId, HttpStatus.NOT_FOUND));
 
         thePatient.setStatus(Status.DELETED);
 
@@ -131,10 +148,4 @@ public class PatientService {
 
         patientRepository.save(thePatient);
     }
-
-    public boolean existsByPhoneNumber(String phoneNumber) {
-        
-        return patientRepository.existsByPhoneNumber(phoneNumber);
-    }
-
 }

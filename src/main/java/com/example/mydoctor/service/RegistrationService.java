@@ -4,10 +4,9 @@ import java.util.Optional;
 
 import com.example.mydoctor.exception.ApiException;
 import com.example.mydoctor.payload.ApiResponse;
+import com.example.mydoctor.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -18,35 +17,29 @@ import com.example.mydoctor.entity.Patient;
 
 @Service
 @RequiredArgsConstructor
-public class RegisterationService {
+public class RegistrationService {
 
     private final PatientService patientService;
     private final OtpService otpService;
     private final AuthenticationManager authenticationManager;
-    
-    public ResponseEntity<ApiResponse<Object>> sendOtp(String phoneNumber) {
+    private final JwtUtil jwtUtil;
+
+    public void sendOtp(String phoneNumber) {
         
         try {
             otpService.generateOtp(phoneNumber);
-            return ResponseEntity.ok(new ApiResponse<>(true, "The Otp code was sent", null));
 
         } catch (IllegalStateException ex) {
-            return ResponseEntity
-            .status(HttpStatus.TOO_MANY_REQUESTS)
-            .body(new ApiResponse<>(false, ex.getMessage(), null));
+            throw new ApiException(ex.getMessage(), HttpStatus.TOO_MANY_REQUESTS);
         }
     }
     
-    public ResponseEntity<ApiResponse<Object>> registerAndLogin(PatientDTO thePatientDTO) {
+    public void registerAndLogin(PatientDTO thePatientDTO) {
 
-        if (patientService.existsByPhoneNumber(thePatientDTO.getPhoneNumber())) {
-            throw new ApiException("Number is already taken", HttpStatus.BAD_REQUEST);
-        }
+        PatientDTO existingByPhone = patientService.getPatientByPhoneNumber(thePatientDTO.getPhoneNumber());
+        PatientDTO existingByUsername = patientService.getPatientByUsername(thePatientDTO.getUsername());
 
-
-        Optional<Patient> patient = patientService.getPatientByUsername(thePatientDTO.getUsername());
-        
-        if (patient.isPresent()) {
+        if (existingByUsername != null || existingByPhone != null) {
 
             try {
                 authenticationManager.authenticate(
@@ -60,25 +53,20 @@ public class RegisterationService {
                 throw new ApiException("Invalid Username or Password", HttpStatus.UNAUTHORIZED);
             } 
         } else {
-
             patientService.createPatient(thePatientDTO);
         }
 
         sendOtp(thePatientDTO.getPhoneNumber());
-
-        return ResponseEntity.ok(new ApiResponse<>(true, "success", null));
-
     }
     
-    public ResponseEntity<ApiResponse<Object>> verify(String phoneNumber, String otp) {
+    public String verify(String phoneNumber, String otp) {
         
         if (!otpService.verifyOtp(phoneNumber, otp)) {
         
             throw new ApiException("Invalid or expired OTP", HttpStatus.UNAUTHORIZED);
-        
-        } else {
-
-            return ResponseEntity.ok(new ApiResponse<>(true, "Authenticated successfully", null));
         }
+
+        PatientDTO patient = patientService.getPatientByPhoneNumber(phoneNumber);
+        return jwtUtil.generateToken(patient.getUsername());
     }
 }

@@ -23,7 +23,7 @@ public class PatientDTO {
     @NotBlank(message = "Username can not be blank")
     private String username;
 
-    @Size(min = 6, message = "Password must be at least 6 characters")
+//    @Size(min = 6, message = "Password must be at least 6 characters")
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
 

@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: mydoctor
+
+  main:
+    banner-mode: off
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydoctor
+    username: springDB
+    password: springDB
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
+        security: DEBUG
+
+kavenegar_api: 695342306E5A673032426C736B63306B63696253486470466B5637547A4B6D4154374D5A464D4C737654383D
+
+jwt.secret_key: ms0pcyHyAsWr16Cx9UX?]w%hVkLFy)jaGy7qExNhz%Nf15^*fkcaD!vtnLkd5s*z
