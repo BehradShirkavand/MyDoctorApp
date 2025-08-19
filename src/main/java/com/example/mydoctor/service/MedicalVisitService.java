@@ -1,10 +1,16 @@
 package com.example.mydoctor.service;
 
 import java.util.List;
+import java.util.Optional;
 
+import com.example.mydoctor.dto.UserDTO;
+import com.example.mydoctor.entity.User;
+import com.example.mydoctor.enums.ERole;
 import com.example.mydoctor.exception.ApiException;
+import com.example.mydoctor.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.mydoctor.dto.MedicalVisitDTO;
@@ -19,6 +25,7 @@ public class MedicalVisitService {
 
     private final MedicalVisitRepository medicalVisitRepository;
     private final MedicalVisitMapper medicalVisitMapper;
+    private final UserRepository userRepository;
 
     public List<MedicalVisitDTO> getAllActiveMedicalVisits() {
         
@@ -35,7 +42,17 @@ public class MedicalVisitService {
 
     public MedicalVisitDTO addMedicalVisit(MedicalVisitDTO theMedicalVisitDTO) {
 
-        return medicalVisitMapper.toDto(medicalVisitRepository.save(medicalVisitMapper.toEntity(theMedicalVisitDTO)));
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User patient = userRepository.findByRoles_NameAndUsernameAndStatus(ERole.ROLE_PATIENT, username, Status.ACTIVE).orElseThrow(() -> new ApiException("Patient not found", HttpStatus.NOT_FOUND));
+
+        MedicalVisit visit = medicalVisitMapper.toEntity(theMedicalVisitDTO);
+
+        patient.addMedicalVisit(visit);
+
+        userRepository.save(patient);
+
+        return medicalVisitMapper.toDto(visit);
     }
 
     public MedicalVisitDTO updateMedicalVisit(MedicalVisitDTO theMedicalVisitDTO) {

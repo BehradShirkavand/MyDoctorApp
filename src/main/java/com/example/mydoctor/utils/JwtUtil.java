@@ -1,41 +1,78 @@
 package com.example.mydoctor.utils;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.Claims;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.Date;
-import java.util.UUID;
 
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret_key}")
-    private String SECRET_KEY ;
+    PrivateKey privateKey = getPrivateKey();
+    PublicKey publicKey = getPublicKey();
 
-    private SecretKey getKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+
+    public JwtUtil() throws Exception {
     }
+
+    private PrivateKey getPrivateKey() throws Exception {
+
+        ClassPathResource resource = new ClassPathResource("keys/private.pem");
+
+        try (InputStream inputStream = resource.getInputStream()) {
+            String key = new String(inputStream.readAllBytes())
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s", "");
+
+            byte[] keyBytes = Base64.getDecoder().decode(key);
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+            return KeyFactory.getInstance("RSA").generatePrivate(spec);
+        }
+    }
+
+    private PublicKey getPublicKey() throws Exception {
+
+        ClassPathResource resource = new ClassPathResource("keys/public.pem");
+
+        try (InputStream inputStream = resource.getInputStream()) {
+             String key = new String(inputStream.readAllBytes())
+            .replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replaceAll("\\s", "");
+
+        byte[] keyBytes = Base64.getDecoder().decode(key);
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        return KeyFactory.getInstance("RSA").generatePublic(spec);
+        }
+        }
 
     public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + 15 * 60 * 1000)) // 15 minutes
+                .signWith(privateKey, SignatureAlgorithm.RS256)
                 .compact();
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(getKey())
+        return Jwts.parserBuilder()
+                .setSigningKey(publicKey)
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
@@ -45,13 +82,19 @@ public class JwtUtil {
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+
+        try {
+            final String username = extractUsername(token);
+            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+
     }
 
     private boolean isTokenExpired(String token) {
         Date expiration = Jwts.parserBuilder()
-                .setSigningKey(getKey())
+                .setSigningKey(publicKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()

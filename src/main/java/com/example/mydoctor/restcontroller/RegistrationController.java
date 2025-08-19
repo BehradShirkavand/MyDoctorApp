@@ -3,6 +3,7 @@ package com.example.mydoctor.restcontroller;
 import com.example.mydoctor.dto.UserDTO;
 import com.example.mydoctor.payload.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,8 +16,6 @@ import com.example.mydoctor.service.RegistrationService;
 
 import jakarta.validation.Valid;
 
-
-//@Validated
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -24,11 +23,11 @@ public class RegistrationController {
 
     private final RegistrationService registrationService;
 
-    @PostMapping("/signup")
+    @PostMapping
     public ResponseEntity<ApiResponse<Void>> RegisterAndLogin(@Valid @RequestBody UserDTO theUserDTO) {
 
         registrationService.registerAndLogin(theUserDTO);
-        return ResponseEntity.ok(new ApiResponse<>(true, "success", null));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Otp sent successfully", null));
     }
 
     @PostMapping("/verifyOtp")
