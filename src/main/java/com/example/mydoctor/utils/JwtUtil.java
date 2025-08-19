@@ -15,6 +15,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 
@@ -60,11 +61,11 @@ public class JwtUtil {
         }
         }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, Instant expiryDate) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 15 * 60 * 1000)) // 15 minutes
+                .setExpiration(Date.from(expiryDate))
                 .signWith(privateKey, SignatureAlgorithm.RS256)
                 .compact();
     }

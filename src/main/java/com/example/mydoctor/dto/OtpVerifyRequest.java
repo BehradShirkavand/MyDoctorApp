@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class OtpVerifyRequest {
 
-    private String phoneNumber;
+    private String tokenId;
 
     @NotBlank(message = "Otp can not be blank")
     @Size(min = 6, max = 6, message = "Otp must 6 digits")

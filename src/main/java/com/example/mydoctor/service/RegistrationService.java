@@ -10,6 +10,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+
 
 @Service
 @RequiredArgsConstructor
@@ -20,16 +22,7 @@ public class RegistrationService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
-    public void sendOtp(String phoneNumber) {
-        try {
-            otpService.generateOtp(phoneNumber);
-
-        } catch (IllegalStateException ex) {
-            throw new ApiException(ex.getMessage(), HttpStatus.TOO_MANY_REQUESTS);
-        }
-    }
-    
-    public void registerAndLogin(UserDTO theUserDTO) {
+    public String registerAndLogin(UserDTO theUserDTO) {
 
         boolean existingByPhone = patientService.existsPatientByPhoneNumber(theUserDTO.getPhoneNumber());
         boolean existingByUsername = patientService.existsPatientByUsername(theUserDTO.getUsername());
@@ -51,17 +44,11 @@ public class RegistrationService {
             patientService.addPatient(theUserDTO);
         }
 
-        sendOtp(theUserDTO.getPhoneNumber());
-    }
-    
-    public String verifyOtp(String phoneNumber, String otp) {
-        
-        if (!otpService.verifyOtp(phoneNumber, otp)) {
-        
-            throw new ApiException("Invalid or expired OTP", HttpStatus.UNAUTHORIZED);
-        }
+        try {
+            return otpService.generateOtp(theUserDTO);
 
-        UserDTO user = patientService.getPatientByPhoneNumber(phoneNumber);
-        return jwtUtil.generateToken(user.getUsername());
+        } catch (IllegalStateException ex) {
+            throw new ApiException(ex.getMessage(), HttpStatus.TOO_MANY_REQUESTS);
+        }
     }
 }
